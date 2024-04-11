@@ -39,9 +39,11 @@ function createPokemon() {
 
   addPokemonToList(pokemon); 
   console.log("Pokemon created:", pokemon);
-  displaySavedPokemons(); 
-  
+  displaySavedPokemons(); // Display saved Pokemons
+  fetchPokemons(); // Fetch and display all Pokemons including the newly created one
+  displayPokemon([]); // Display the newly created Pokemon
 }
+
 
 
 function addPokemonToList(pokemon) {
