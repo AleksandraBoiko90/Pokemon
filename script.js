@@ -10,6 +10,13 @@ document.addEventListener("DOMContentLoaded", function () {
       fetchPokemons(type);
     });
   });
+
+  document
+    .getElementById("create-pokemon-form")
+    .addEventListener("submit", function (e) {
+      e.preventDefault();
+      createPokemon();
+    });
 });
 
 function fetchPokemons(type = "") {
@@ -42,15 +49,15 @@ function displayPokemon(pokemonList) {
     pokemonCard.classList.add(`type-${type}`);
 
     pokemonCard.innerHTML = `
-            <img src="https://raw.githubusercontent.com/PokeAPI/sprites/master/sprites/pokemon/${getPokemonId(
-              pokemon.url
-            )}.png" alt="${pokemon.name}">
-            <h3>${pokemon.name}</h3>
-            <p>Type: ${type}</p> 
-            <button class="save-button">Save</button>
-            <button class="delete-button">Delete</button>
-            <button class="edit-button">Edit</button>
-        `;
+          <img src="https://raw.githubusercontent.com/PokeAPI/sprites/master/sprites/pokemon/${getPokemonId(
+            pokemon.url
+          )}.png" alt="${pokemon.name}">
+          <h3>${pokemon.name}</h3>
+          <p>Type: ${type}</p> 
+          <button class="save-button">Save</button>
+          <button class="delete-button">Delete</button>
+          <button class="edit-button">Edit</button>
+      `;
 
     pokemonContainer.appendChild(pokemonCard);
   });
@@ -68,3 +75,5 @@ function getPokemonType(url) {
     .then((data) => data.types[0].type.name)
     .catch((error) => console.error("Error:", error));
 }
+
+//Implement type-based filtering and styling for Pokémon cards
