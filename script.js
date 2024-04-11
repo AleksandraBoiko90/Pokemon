@@ -76,25 +76,30 @@ function displayPokemon(pokemonList, filterType = "") {
   const pokemonContainer = document.querySelector(".pokemon-container");
   pokemonContainer.innerHTML = "";
 
-  pokemonList.forEach((pokemon) => {
+  pokemonList.forEach((pokemon, index) => {
     const pokemonCard = document.createElement("div");
     pokemonCard.classList.add("pokemon-card");
 
     let imageUrl = pokemon.imageUrl;
-    let type = pokemon.type.split(" ")[0];
-
-    pokemonCard.classList.add(`type-${type}`);
+    let type = pokemon.type;
 
     pokemonCard.innerHTML = `
           <img src="${imageUrl}" alt="${pokemon.name}" style="width:100px;height:100px;">
           <h3>${pokemon.name}</h3>
-          <p>Type: ${pokemon.type}</p> 
-          <button class="save-button">Save</button>
+          <p>Type: ${type}</p>
+          <button class="save-button" data-index="${index}">Save</button>
           <button class="delete-button">Delete</button>
           <button class="edit-button">Edit</button>
       `;
 
     pokemonContainer.appendChild(pokemonCard);
+  });
+
+  document.querySelectorAll(".save-button").forEach((button) => {
+    button.addEventListener("click", function () {
+      const index = this.getAttribute("data-index");
+      savePokemon(pokemonList[index]);
+    });
   });
 }
 
