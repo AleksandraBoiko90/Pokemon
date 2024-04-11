@@ -19,39 +19,76 @@ document.addEventListener("DOMContentLoaded", function () {
     });
 });
 
-function fetchPokemons(type = "") {
-  let url = "https://pokeapi.co/api/v2/pokemon?limit=50";
-  if (type) {
-    url = `https://pokeapi.co/api/v2/type/${type}`;
-  }
+function createPokemon() {
+  const name = document.getElementById("pokemon-name").value;
+  const type = document.getElementById("pokemon-type").value;
+  const pokemon = {
+    name,
+    type,
+    imageUrl: "./images/Poké_Ball_icon.svg.png",
+  };
+  savePokemon(pokemon);
+  fetchPokemons();
+}
 
+function savePokemon(pokemon) {
+  let pokemons = JSON.parse(localStorage.getItem("customPokemons")) || [];
+  pokemons.push(pokemon);
+  localStorage.setItem("customPokemons", JSON.stringify(pokemons));
+}
+
+function fetchPokemons(type = "") {
+  let customPokemons = JSON.parse(localStorage.getItem("customPokemons")) || [];
+  customPokemons = customPokemons.filter(
+    (pokemon) => !type || pokemon.type === type
+  );
+
+  let url = "https://pokeapi.co/api/v2/pokemon?limit=50";
   fetch(url)
     .then((response) => response.json())
     .then((data) => {
-      const pokemonList = type
-        ? data.pokemon.map((p) => p.pokemon)
-        : data.results;
-      displayPokemon(pokemonList);
+      const pokemonListFromAPI = data.results;
+
+      const promises = pokemonListFromAPI.map((pokemon) =>
+        fetch(pokemon.url).then((resp) => resp.json())
+      );
+
+      Promise.all(promises).then((results) => {
+        const filteredResults = type
+          ? results.filter((pokemon) => pokemon.types[0].type.name === type)
+          : results;
+
+        filteredResults.forEach((pokemon) => {
+          pokemon.type = pokemon.types[0].type.name;
+          pokemon.imageUrl = pokemon.sprites.front_default;
+        });
+
+        displayPokemon([...customPokemons, ...filteredResults]);
+      });
     })
     .catch((error) => console.error("Error:", error));
 }
 
-function displayPokemon(pokemonList) {
+function displayPokemon(pokemonList, filterType = "") {
   const pokemonContainer = document.querySelector(".pokemon-container");
   pokemonContainer.innerHTML = "";
 
-  pokemonList.forEach(async (pokemon) => {
+  pokemonList.forEach((pokemon) => {
     const pokemonCard = document.createElement("div");
-    pokemonCard.classList.add("pokemon-card");
+    pokemonCard.classList.add("type-filter-button");
 
-    const type = await getPokemonType(pokemon.url);
+    let imageUrl =
+      pokemon.imageUrl ||
+      `https://raw.githubusercontent.com/PokeAPI/sprites/master/sprites/pokemon/${getPokemonId(
+        pokemon.url
+      )}.png`;
 
-    pokemonCard.classList.add(`type-${type}`);
+    let type = pokemon.type;
+    let primaryType = type.split(" ")[0];
+    pokemonCard.classList.add(`type-${primaryType}`);
 
     pokemonCard.innerHTML = `
-          <img src="https://raw.githubusercontent.com/PokeAPI/sprites/master/sprites/pokemon/${getPokemonId(
-            pokemon.url
-          )}.png" alt="${pokemon.name}">
+          <img src="${imageUrl}" alt="${pokemon.name}">
           <h3>${pokemon.name}</h3>
           <p>Type: ${type}</p> 
           <button class="save-button">Save</button>
@@ -75,5 +112,3 @@ function getPokemonType(url) {
     .then((data) => data.types[0].type.name)
     .catch((error) => console.error("Error:", error));
 }
-
-//Implement type-based filtering and styling for Pokémon cards
