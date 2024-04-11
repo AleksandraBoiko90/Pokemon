@@ -20,13 +20,16 @@ document.addEventListener("DOMContentLoaded", function () {
 });
 
 function createPokemon() {
-  const name = document.getElementById("pokemon-name").value;
-  const type = document.getElementById("pokemon-type").value;
+  // Получение данных из формы и создание объекта покемона
   const pokemon = {
-    name,
-    type,
-    imageUrl: "./images/Poké_Ball_icon.svg.png",
+    name: document.getElementById("pokemon-name").value,
+    type: document.getElementById("pokemon-type").value, // Здесь уже должен быть только один тип
+    imageUrl:
+      document.getElementById("pokemon-image").files.length > 0
+        ? URL.createObjectURL(document.getElementById("pokemon-image").files[0])
+        : "./images/Poké_Ball_icon.svg.png",
   };
+
   savePokemon(pokemon);
   fetchPokemons();
 }
@@ -59,11 +62,13 @@ function fetchPokemons(type = "") {
           : results;
 
         filteredResults.forEach((pokemon) => {
+          // Сохраняем только первый тип
           pokemon.type = pokemon.types[0].type.name;
           pokemon.imageUrl = pokemon.sprites.front_default;
         });
 
-        displayPokemon([...customPokemons, ...filteredResults]);
+        const allPokemons = [...customPokemons, ...filteredResults];
+        displayPokemon(allPokemons);
       });
     })
     .catch((error) => console.error("Error:", error));
@@ -75,22 +80,17 @@ function displayPokemon(pokemonList, filterType = "") {
 
   pokemonList.forEach((pokemon) => {
     const pokemonCard = document.createElement("div");
-    pokemonCard.classList.add("type-filter-button");
+    pokemonCard.classList.add("pokemon-card");
 
-    let imageUrl =
-      pokemon.imageUrl ||
-      `https://raw.githubusercontent.com/PokeAPI/sprites/master/sprites/pokemon/${getPokemonId(
-        pokemon.url
-      )}.png`;
+    let imageUrl = pokemon.imageUrl; // Используем сохранённый URL изображения
+    let type = pokemon.type.split(" ")[0].toLowerCase(); // Используем только первое слово типа и приводим его к нижнему регистру
 
-    let type = pokemon.type;
-    let primaryType = type.split(" ")[0];
-    pokemonCard.classList.add(`type-${primaryType}`);
+    pokemonCard.classList.add(`type-${type}`);
 
     pokemonCard.innerHTML = `
-          <img src="${imageUrl}" alt="${pokemon.name}">
+          <img src="${imageUrl}" alt="${pokemon.name}" style="width:100px;height:100px;">
           <h3>${pokemon.name}</h3>
-          <p>Type: ${type}</p> 
+          <p>Type: ${pokemon.type}</p> 
           <button class="save-button">Save</button>
           <button class="delete-button">Delete</button>
           <button class="edit-button">Edit</button>
