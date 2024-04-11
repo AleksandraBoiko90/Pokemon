@@ -20,10 +20,9 @@ document.addEventListener("DOMContentLoaded", function () {
 });
 
 function createPokemon() {
-  // Получение данных из формы и создание объекта покемона
   const pokemon = {
     name: document.getElementById("pokemon-name").value,
-    type: document.getElementById("pokemon-type").value, // Здесь уже должен быть только один тип
+    type: document.getElementById("pokemon-type").value,
     imageUrl:
       document.getElementById("pokemon-image").files.length > 0
         ? URL.createObjectURL(document.getElementById("pokemon-image").files[0])
@@ -62,7 +61,6 @@ function fetchPokemons(type = "") {
           : results;
 
         filteredResults.forEach((pokemon) => {
-          // Сохраняем только первый тип
           pokemon.type = pokemon.types[0].type.name;
           pokemon.imageUrl = pokemon.sprites.front_default;
         });
@@ -82,8 +80,8 @@ function displayPokemon(pokemonList, filterType = "") {
     const pokemonCard = document.createElement("div");
     pokemonCard.classList.add("pokemon-card");
 
-    let imageUrl = pokemon.imageUrl; // Используем сохранённый URL изображения
-    let type = pokemon.type.split(" ")[0].toLowerCase(); // Используем только первое слово типа и приводим его к нижнему регистру
+    let imageUrl = pokemon.imageUrl;
+    let type = pokemon.type.split(" ")[0];
 
     pokemonCard.classList.add(`type-${type}`);
 
@@ -111,4 +109,48 @@ function getPokemonType(url) {
     .then((response) => response.json())
     .then((data) => data.types[0].type.name)
     .catch((error) => console.error("Error:", error));
+}
+
+function savePokemon(pokemon) {
+  let pokemons = JSON.parse(localStorage.getItem("customPokemons")) || [];
+  if (pokemons.length >= 5) {
+    alert(
+      "You can't save more than 5 pokemons. Please delete one to save a new one."
+    );
+    return;
+  }
+  pokemons.push(pokemon);
+  localStorage.setItem("customPokemons", JSON.stringify(pokemons));
+  displaySavedPokemons();
+}
+
+function displaySavedPokemons() {
+  const savedPokemonsContainer = document.querySelector(".saved-pokemons");
+  savedPokemonsContainer.innerHTML = "";
+
+  let savedPokemons = JSON.parse(localStorage.getItem("customPokemons")) || [];
+  savedPokemons.forEach((pokemon, index) => {
+    const pokemonElement = document.createElement("div");
+    pokemonElement.classList.add("pokemon-card");
+    pokemonElement.innerHTML = `
+          <img src="${pokemon.imageUrl}" alt="${pokemon.name}" style="width:100px;height:100px;">
+          <h3>${pokemon.name}</h3>
+          <p>Type: ${pokemon.type}</p>
+      `;
+
+    // Создание кнопки удаления
+    const deleteButton = document.createElement("button");
+    deleteButton.textContent = "Delete";
+    deleteButton.onclick = () => deleteSavedPokemon(index);
+    pokemonElement.appendChild(deleteButton);
+
+    savedPokemonsContainer.appendChild(pokemonElement);
+  });
+}
+
+function deleteSavedPokemon(index) {
+  let savedPokemons = JSON.parse(localStorage.getItem("customPokemons")) || [];
+  savedPokemons.splice(index, 1);
+  localStorage.setItem("customPokemons", JSON.stringify(savedPokemons));
+  displaySavedPokemons();
 }
