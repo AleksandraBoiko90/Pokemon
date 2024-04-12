@@ -39,9 +39,9 @@ function createPokemon() {
 
   addPokemonToList(pokemon); 
   console.log("Pokemon created:", pokemon);
-  displaySavedPokemons(); // Display saved Pokemons
-  fetchPokemons(); // Fetch and display all Pokemons including the newly created one
-  displayPokemon([]); // Display the newly created Pokemon
+  displaySavedPokemons(); 
+  fetchPokemons(); 
+  displayPokemon([]); 
 }
 
 
@@ -85,56 +85,65 @@ function displayPokemon(pokemonList, filterType = '') {
   const pokemonContainer = document.querySelector('.pokemon-container');
   pokemonContainer.innerHTML = '';
 
-  // Отображение покемонов из myPokemons
+
   let myPokemons = JSON.parse(localStorage.getItem('myPokemons')) || [];
   myPokemons.forEach((pokemon, index) => {
-      const pokemonCard = document.createElement('div');
-      pokemonCard.classList.add('pokemon-card');
-
-      let imageUrl = pokemon.imageUrl;
-      let type = pokemon.type;
-
-      pokemonCard.innerHTML = `
-          <img src="${imageUrl}" alt="${pokemon.name}" style="width:100px;height:100px;">
-          <h3>${pokemon.name}</h3>
-          <p>Type: ${type}</p>
-          <button class="save-button" data-index="${index}">Save</button>
-          <button class="delete-button">Delete</button>
-          <button class="edit-button">Edit</button>
-      `;
-
+      const pokemonCard = createPokemonCard(pokemon, index);
       pokemonContainer.appendChild(pokemonCard);
   });
 
-  // Отображение покемонов из API
+
   pokemonList.forEach((pokemon, index) => {
-      const pokemonCard = document.createElement('div');
-      pokemonCard.classList.add('pokemon-card');
-
-      let imageUrl = pokemon.imageUrl;
-      let type = pokemon.type;
-
-      pokemonCard.innerHTML = `
-          <img src="${imageUrl}" alt="${pokemon.name}" style="width:100px;height:100px;">
-          <h3>${pokemon.name}</h3>
-          <p>Type: ${type}</p>
-          <button class="save-button" data-index="${index}">Save</button>
-          <button class="delete-button">Delete</button>
-          <button class="edit-button">Edit</button>
-      `;
-
+      const pokemonCard = createPokemonCard(pokemon, index);
       pokemonContainer.appendChild(pokemonCard);
   });
 
-  // Добавить обработчики кнопок сохранения для покемонов из API
+
   document.querySelectorAll('.save-button').forEach(button => {
       button.addEventListener('click', function() {
           const index = this.getAttribute('data-index');
           savePokemon(pokemonList[index]);
       });
   });
+
+
+  attachDeleteEventHandlers(pokemonList);
 }
 
+function createPokemonCard(pokemon, index) {
+  const pokemonCard = document.createElement('div');
+  pokemonCard.classList.add('pokemon-card');
+
+  let imageUrl = pokemon.imageUrl;
+  let type = pokemon.type;
+
+  pokemonCard.innerHTML = `
+      <img src="${imageUrl}" alt="${pokemon.name}" style="width:100px;height:100px;">
+      <h3>${pokemon.name}</h3>
+      <p>Type: ${type}</p>
+      <button class="save-button" data-index="${index}">Save</button>
+      <button class="delete-button">Delete</button>
+      <button class="edit-button">Edit</button>
+  `;
+
+  return pokemonCard;
+}
+
+function attachDeleteEventHandlers(pokemonList) {
+  document.querySelectorAll('.delete-button').forEach((button, index) => {
+      button.addEventListener('click', function () {
+          const pokemonIndex = parseInt(this.parentElement.querySelector('.save-button').getAttribute('data-index'));
+          deletePokemonFromList(pokemonIndex, pokemonList);
+          
+          this.parentElement.remove();
+      });
+  });
+}
+
+function deletePokemonFromList(index, pokemonList) {
+  pokemonList.splice(index, 1); 
+  displayPokemon(pokemonList);
+}
 
 function displaySavedPokemons() {
   const savedPokemonsContainer = document.querySelector('.saved-pokemons');
@@ -207,4 +216,5 @@ function deleteSavedPokemon(index) {
   localStorage.setItem('customPokemons', JSON.stringify(savedPokemons));
   displaySavedPokemons(); 
 }
+
 
