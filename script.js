@@ -24,20 +24,80 @@ document.addEventListener('DOMContentLoaded', function () {
 });
 
 function createPokemon() {
-  const pokemon = {
-      name: document.getElementById('pokemon-name').value,
-      type: document.getElementById('pokemon-type').value,
-      imageUrl: document.getElementById('pokemon-image').files.length > 0
-          ? URL.createObjectURL(document.getElementById('pokemon-image').files[0])
-          : './images/Poké_Ball_icon.svg.png'
-  };
+  // Retrieve values from the form fields
+  const name = document.getElementById('pokemon-name').value;
+  const type = document.getElementById('pokemon-type').value;
+  const imageFileInput = document.getElementById('pokemon-image');
+  const hp = parseInt(document.getElementById('pokemon-hp').value);
+  const attack = parseInt(document.getElementById('pokemon-attack').value);
 
-  addPokemonToList(pokemon);
-  console.log("Pokemon created:", pokemon);
-  const currentFilterType = getCurrentFilterType();
-  displaySavedPokemons(currentFilterType);
-  fetchPokemons(currentFilterType);
-  displayPokemon([], currentFilterType);
+  // Check if all required fields are filled
+  if (!name || !type || isNaN(hp) || isNaN(attack)) {
+      alert('Please fill in all fields.');
+      return;
+  }
+
+  // Check if an image file is selected
+  let imageUrl = './images/Poké_Ball_icon.svg.png'; // Default image URL
+  if (imageFileInput.files && imageFileInput.files.length > 0) {
+      // Get the first selected image file
+      const imageFile = imageFileInput.files[0];
+
+      // Check if the selected file is an image
+      if (!imageFile.type.startsWith('image/')) {
+          alert('Please select an image file.');
+          return;
+      }
+
+      // Read the selected image file as a data URL
+      const reader = new FileReader();
+      reader.onload = function(event) {
+          imageUrl = event.target.result;
+
+          // Create the Pokemon object
+          const pokemon = {
+              name: name,
+              type: type,
+              imageUrl: imageUrl,
+              hp: hp,
+              attack: attack
+          };
+
+          // Add the Pokemon to the list and save it
+          addPokemonToList(pokemon);
+
+          // Display the updated list of saved Pokemons
+          displaySavedPokemons(getCurrentFilterType());
+
+          // Clear the form fields
+          document.getElementById('create-pokemon-form').reset();
+
+          // Log the created Pokemon for debugging
+          console.log("Pokemon created:", pokemon);
+      };
+      reader.readAsDataURL(imageFile);
+  } else {
+      // Create the Pokemon object with default image URL
+      const pokemon = {
+          name: name,
+          type: type,
+          imageUrl: imageUrl,
+          hp: hp,
+          attack: attack
+      };
+
+      // Add the Pokemon to the list and save it
+      addPokemonToList(pokemon);
+
+      // Display the updated list of saved Pokemons
+      displaySavedPokemons(getCurrentFilterType());
+
+      // Clear the form fields
+      document.getElementById('create-pokemon-form').reset();
+
+      // Log the created Pokemon for debugging
+      console.log("Pokemon created:", pokemon);
+  }
 }
 
 
@@ -75,34 +135,39 @@ function addPokemonToList(pokemon) {
 
 function fetchPokemons(type = '') {
   let url = 'https://pokeapi.co/api/v2/pokemon?limit=50';
+
   fetch(url)
-      .then(response => response.json())
-      .then(data => {
-          const pokemonListFromAPI = data.results;
+  .then(response => response.json())
+  .then(data => {
+      const pokemonListFromAPI = data.results;
 
-          const promises = pokemonListFromAPI.map(pokemon =>
-              fetch(pokemon.url).then(resp => resp.json())
-          );
+      const promises = pokemonListFromAPI.map(pokemon =>
+          fetch(pokemon.url).then(resp => resp.json())
+      );
 
-          Promise.all(promises).then(results => {
-              console.log("The received data of pokemons:", results); // Добавим вывод данных о покемонах
-              const filteredResults = results.filter(pokemon => {
-                  return !type || (pokemon.types[0].type.name === type);
-              }).map(pokemon => {
-                  return {
-                      name: pokemon.name,
-                      type: pokemon.types[0].type.name,
-                      imageUrl: pokemon.sprites.front_default,
-                      hp: getStat(pokemon.stats, "hp"), // Убедитесь, что hp корректно определен
-                      attack: getStat(pokemon.stats, "attack")
-                  };
-              });
+      Promise.all(promises).then(results => {
+          console.log("Полученные данные о покемонах:", results);
 
-              console.log("The filtered data of pokemons:", filteredResults); // Добавим вывод отфильтрованных данных
-              displayPokemon(filteredResults, type);
+          const filteredResults = results.map(pokemon => {
+              return {
+                  name: pokemon.name,
+                  type: pokemon.types[0].type.name,
+                  imageUrl: pokemon.sprites.front_default,
+                  hp: getStat(pokemon.stats, "hp"),
+                  attack: getStat(pokemon.stats, "attack")
+              };
           });
+
+
+
+          savePokemonFromAPI(filteredResults);
+         
+
+          displayPokemon(filteredResults, type);
+          });
+          
       })
-      .catch(error => console.error('Ошибка:', error));
+      .catch(error => console.error('Error:', error));
 }
 
 function getStat(stats, statName) {
@@ -130,6 +195,11 @@ function displayPokemon(pokemonList, filterType = '') {
 }
 
 
+
+function savePokemonFromAPI(pokemonList) {
+  localStorage.setItem('allPokemons', JSON.stringify(pokemonList));
+}
+
 function createPokemonCard(pokemon, index) {
   const pokemonCard = document.createElement('div');
   pokemonCard.classList.add('pokemon-card');
@@ -153,27 +223,109 @@ function createPokemonCard(pokemon, index) {
 }
 
 
+function deletePokemonFromList(index, allPokemons) {
+  allPokemons.splice(index, 1);
+  localStorage.setItem('myPokemons', JSON.stringify(allPokemons));
+}
+
 function attachDeleteEventHandlers(allPokemons) {
+  // Attach event handlers for delete, edit, and save buttons
   document.querySelectorAll('.delete-button').forEach((button, index) => {
       button.addEventListener('click', function () {
           const pokemonIndex = parseInt(this.parentElement.querySelector('.save-button').getAttribute('data-index'));
-          deletePokemonFromList(pokemonIndex);
+          deletePokemonFromList(pokemonIndex, allPokemons);
           this.parentElement.remove();
       });
   });
 
+  document.querySelectorAll('.edit-button').forEach(button => {
+      button.addEventListener('click', function () {
+          const index = parseInt(this.getAttribute('data-index'));
+          const isCustom = this.parentElement.classList.contains('pokemon-card'); // Проверяем, является ли покемон собственным
+          const pokemon = isCustom ? getAllPokemons()[index] : JSON.parse(localStorage.getItem('allPokemons'))[index];
+          openEditForm(pokemon, index, isCustom); // Pass the selected Pokemon, its index, and its type to the edit form function
+      });
+  });
+  
   document.querySelectorAll('.save-button').forEach(button => {
       button.addEventListener('click', function () {
           const index = parseInt(this.getAttribute('data-index'));
-          savePokemon(allPokemons[index]);
+          savePokemon(allPokemons[index]); // Pass the correct Pokemon data to the save function
       });
   });
 }
 
-function deletePokemonFromList(index) {
-  let myPokemons = JSON.parse(localStorage.getItem('myPokemons')) || [];
-  myPokemons.splice(index, 1);
-  localStorage.setItem('myPokemons', JSON.stringify(myPokemons));
+function openEditForm(pokemon, index, isCustom) {
+  const editForm = document.getElementById('edit-pokemon-form');
+  editForm.classList.remove('hidden');
+  
+  // Проверяем, что объект pokemon определен и не является undefined
+  if (pokemon) {
+      // Заполняем форму редактирования данными выбранного покемона
+      document.getElementById('edit-pokemon-name').value = pokemon.name || '';
+      document.getElementById('edit-pokemon-type').value = pokemon.type || '';
+      document.getElementById('edit-pokemon-hp').value = pokemon.hp || '';
+      document.getElementById('edit-pokemon-attack').value = pokemon.attack || '';
+
+      // Добавляем обработчик события для кнопки сохранения в форме редактирования
+      document.getElementById('save-edited-pokemon').addEventListener('click', function () {
+          saveEditedPokemon(index, isCustom);
+      });
+  } else {
+      // Выводим сообщение об ошибке, если объект pokemon не определен
+      console.error('Pokemon data is undefined.');
+      // Можно также добавить дополнительные действия, например, скрыть форму редактирования
+  }
+}
+
+function saveEditedPokemon(index, isCustom) {
+  const editedPokemon = {
+      name: document.getElementById('edit-pokemon-name').value,
+      type: document.getElementById('edit-pokemon-type').value,
+      imageUrl: document.getElementById('edit-pokemon-image').value,
+      hp: parseInt(document.getElementById('edit-pokemon-hp').value),
+      attack: parseInt(document.getElementById('edit-pokemon-attack').value)
+  };
+
+  if (isCustom) {
+      updatePokemonInList(index, editedPokemon);
+  } else {
+      updateGeneralPokemonInList(index, editedPokemon);
+  }
+  closeEditForm();
+  displaySavedPokemons(); // Обновление списка сохраненных покемонов после редактирования
+}
+
+function closeEditForm() {
+  const editForm = document.getElementById('edit-pokemon-form');
+  editForm.classList.add('hidden');
+}
+
+function updatePokemonInList(index, editedPokemon) {
+  let allPokemons = getAllPokemons();
+  allPokemons[index] = editedPokemon;
+  localStorage.setItem('myPokemons', JSON.stringify(allPokemons));
+  displaySavedPokemons(getCurrentFilterType());
+}
+
+
+function updateGeneralPokemonInList(index, editedPokemon) {
+  let allPokemons = JSON.parse(localStorage.getItem('allPokemons'));
+  allPokemons[index] = editedPokemon;
+  localStorage.setItem('allPokemons', JSON.stringify(allPokemons));
+  displaySavedPokemons(getCurrentFilterType());
+}
+
+
+function deleteSavedPokemon(index, filterType = '') {
+  let savedPokemons = JSON.parse(localStorage.getItem('customPokemons')) || [];
+  savedPokemons.splice(index, 1);
+  localStorage.setItem('customPokemons', JSON.stringify(savedPokemons));
+  displaySavedPokemons(filterType); // Обновляем отображение сохраненных покемонов
+}
+
+function getAllPokemons() {
+  return JSON.parse(localStorage.getItem('myPokemons')) || [];
 }
 
 function displaySavedPokemons(filterType = '') {
@@ -211,34 +363,28 @@ function deleteSavedPokemon(index, filterType = '') {
 
 function savePokemon(pokemon) {
   let savedPokemons = JSON.parse(localStorage.getItem('customPokemons')) || [];
-  console.log("Saved pokemons before adding:", savedPokemons);
 
-  const pokemonExists = savedPokemons.some(savedPokemon => savedPokemon.name === pokemon.name && savedPokemon.type === pokemon.type);
-  console.log("Pokemon already exists:", pokemonExists);
+  // Check if the Pokémon already exists in the savedPokemons list
+  const pokemonExists = savedPokemons.some(savedPokemon => 
+      savedPokemon.name === pokemon.name && savedPokemon.type === pokemon.type
+  );
 
   if (pokemonExists) {
       alert('This pokemon is already in your saved list.');
       return;
   }
 
+  // Limiting the number of saved Pokémon to 5
   if (savedPokemons.length >= 5) {
       alert("You can't save more than 5 pokemons. Please delete one to save a new one.");
       return;
   }
 
+  // Add the new Pokémon if not already present
   savedPokemons.push(pokemon);
-  console.log("New Pokemon added:", pokemon);
   localStorage.setItem('customPokemons', JSON.stringify(savedPokemons));
-  displaySavedPokemons();
+  displaySavedPokemons(); // Update the list of saved Pokémon
 }
-
-
-
-
-
-
-
-
 document.getElementById('prepare-battle').addEventListener('click', prepareBattle);
 
 function prepareBattle() {
@@ -248,7 +394,7 @@ function prepareBattle() {
       const [myTeamPokemons, opponentPokemons] = values;
       startBattle(myTeamPokemons, opponentPokemons);
   }).catch(error => {
-      console.error('Error preparing for battle:', error);
+      console.error('Ошибка при подготовке к битве:', error);
   });
 }
 
@@ -257,7 +403,7 @@ function getSavedPokemons() {
   return new Promise(resolve => {
       const savedPokemons = JSON.parse(localStorage.getItem('customPokemons') || '[]');
       if (savedPokemons.length < 3) {
-          alert("Not enough Pokémon for battle. Save at least 3 Pokemon.");
+          alert("Недостаточно покемонов для битвы. Сохраните минимум 3 покемона.");
           resolve([]);
       } else {
           resolve(savedPokemons.slice(0, 3));

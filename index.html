@@ -33,9 +33,23 @@
             <option value="steel">Steel</option>
 
         </select>
-        <input type="file" id="pokemon-image" accept="image/png, image/jpeg">
+        <input type="file" id="pokemon-image" accept=".jpg, .jpeg, .png" />
+
+        <input type="number" id="pokemon-hp" placeholder="HP" required>
+        <input type="number" id="pokemon-attack" placeholder="Attack" required>
+
+        
         <button type="submit">Create pokemon</button>
     </form>
+    <div id="edit-pokemon-form" class="hidden">
+        <h2>Edit Pokemon</h2>
+        <input type="text" id="edit-pokemon-name" placeholder="Name">
+        <input type="text" id="edit-pokemon-type" placeholder="Type">
+        <input type="file" id="edit-pokemon-image" placeholder="Image URL">
+        <input type="number" id="edit-pokemon-hp" placeholder="HP">
+        <input type="number" id="edit-pokemon-attack" placeholder="Attack">
+        <button id="save-edited-pokemon">Save</button>
+    </div>
     <div id="type-filters">
         <button class="filter-button type-normal">Normal</button>
         <button class="filter-button type-water">Water</button>
