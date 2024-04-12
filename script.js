@@ -85,21 +85,29 @@ function fetchPokemons(type = '') {
           );
 
           Promise.all(promises).then(results => {
-
+              console.log("Полученные данные о покемонах:", results); // Добавим вывод данных о покемонах
               const filteredResults = results.filter(pokemon => {
                   return !type || (pokemon.types[0].type.name === type);
+              }).map(pokemon => {
+                  return {
+                      name: pokemon.name,
+                      type: pokemon.types[0].type.name,
+                      imageUrl: pokemon.sprites.front_default,
+                      hp: getStat(pokemon.stats, "hp"), // Убедитесь, что hp корректно определен
+                      attack: getStat(pokemon.stats, "attack")
+                  };
               });
 
-              filteredResults.forEach(pokemon => {
-                  pokemon.type = pokemon.types[0].type.name;
-                  pokemon.imageUrl = pokemon.sprites.front_default;
-              });
-
+              console.log("Отфильтрованные данные о покемонах:", filteredResults); // Добавим вывод отфильтрованных данных
               displayPokemon(filteredResults, type);
           });
-
       })
-      .catch(error => console.error('Error:', error));
+      .catch(error => console.error('Ошибка:', error));
+}
+
+function getStat(stats, statName) {
+  const stat = stats.find(s => s.stat.name === statName);
+  return stat ? stat.base_stat : null;
 }
 
 
@@ -232,12 +240,16 @@ function savePokemon(pokemon) {
 document.getElementById('prepare-battle').addEventListener('click', prepareBattle);
 
 function prepareBattle() {
-  const myTeam = getSavedPokemons(); 
+  const myTeam = getSavedPokemons();  
   const opponentTeam = getRandomOpponentPokemons();  
   Promise.all([myTeam, opponentTeam]).then(values => {
-      startBattle(values[0], values[1]);
+      const [myTeamPokemons, opponentPokemons] = values;
+      startBattle(myTeamPokemons, opponentPokemons);
+  }).catch(error => {
+      console.error('Ошибка при подготовке к битве:', error);
   });
 }
+
 
 function getSavedPokemons() {
   return new Promise(resolve => {
@@ -252,7 +264,10 @@ function getSavedPokemons() {
 }
 
 function getRandomOpponentPokemons() {
-  let url = 'https://pokeapi.co/api/v2/pokemon?limit=3';
+  const maxOffset = 50;  
+  const offset = Math.floor(Math.random() * (maxOffset + 1)); 
+  let url = `https://pokeapi.co/api/v2/pokemon?limit=3&offset=${offset}`;
+
   return fetch(url)
       .then(response => response.json())
       .then(data => {
@@ -262,8 +277,9 @@ function getRandomOpponentPokemons() {
       });
 }
 
-function startBattle(myTeam, opponentTeam) {
 
+function startBattle(myTeam, opponentTeam) {
+  
   document.getElementById('battle-setup').classList.add('hidden');
   document.getElementById('battle-area').classList.remove('hidden');
   displayPokemons(myTeam, 'my-team');
@@ -272,47 +288,83 @@ function startBattle(myTeam, opponentTeam) {
 
 function displayPokemons(pokemons, containerId) {
   const container = document.getElementById(containerId);
-  container.innerHTML = '';
+  container.innerHTML = '';  
+
   pokemons.forEach(pokemon => {
+      
       const pokemonElement = document.createElement('div');
-      pokemonElement.innerHTML = `<h3>${pokemon.name}</h3><img src="${pokemon.sprites.front_default}" alt="${pokemon.name}" style="width:100px;height:100px;">`;
+      pokemonElement.innerHTML = `
+          <h3>${pokemon.name}</h3>
+          <img src="${pokemon.imageUrl || pokemon.sprites.front_default}" alt="${pokemon.name}" style="width:100px;height:100px;">
+          <p>Health: <span class="health">${pokemon.hp || pokemon.stats[0].base_stat}</span></p>
+          <p>Attack: <span class="attack">${pokemon.attack || pokemon.stats[1].base_stat}</span></p>
+      `;
+
+      
+      pokemonElement.setAttribute('data-hp', pokemon.hp || pokemon.stats[0].base_stat);
+      pokemonElement.setAttribute('data-attack', pokemon.attack || pokemon.stats[1].base_stat);
+
+      
       container.appendChild(pokemonElement);
   });
 }
 
 
 document.getElementById('attack').addEventListener('click', performAttack);
-
 function performAttack() {
+  let myTeam = Array.from(document.querySelectorAll('#my-team div'));
+  let opponentTeam = Array.from(document.querySelectorAll('#opponent-team div'));
 
-  console.log('Attack performed!');
+  if (opponentTeam.length > 0 && myTeam.length > 0) {
+      
+      let attackElement = myTeam[0].querySelector('.attack');
+      if (!attackElement) {
+          console.error('Attack element not found');
+          return; 
+      }
+      let attackValue = parseInt(attackElement.textContent);
 
+      
+      let opponentPokemon = opponentTeam[0];
+      let opponentHealthElement = opponentPokemon.querySelector('.health');
+      if (!opponentHealthElement) {
+          console.error('Health element not found');
+          return; 
+      }
+      let opponentHealth = parseInt(opponentHealthElement.textContent);
 
-  let opponentPokemons = document.querySelectorAll('#opponent-team div');
-  let myPokemons = document.querySelectorAll('#my-team div');
+      opponentHealth -= attackValue;
 
-
-  if (opponentPokemons.length > 0) {
-      opponentPokemons[0].remove(); 
-      console.log('Opponent Pokémon defeated!');
-
+      if (opponentHealth > 0) {
+          opponentHealthElement.textContent = opponentHealth;
+          console.log('Opponent has ' + opponentHealth + ' health left.');
+      } else {
+          opponentPokemon.remove();
+          console.log('Opponent Pokémon defeated!');
+      }
 
       if (document.querySelectorAll('#opponent-team div').length === 0) {
           alert('You won the battle!');
-          document.getElementById('battle-area').classList.add('hidden');  
-          document.getElementById('battle-setup').classList.remove('hidden');  
+          document.getElementById('battle-area').classList.add('hidden');
+          document.getElementById('battle-setup').classList.remove('hidden');
       }
+  } else {
+      console.log('No pokemons available for the attack.');
   }
 }
 
-function updateHealth(pokemonElement, damage) {
 
+
+
+
+function updateHealth(pokemonElement, damage) {
+ 
   let health = parseInt(pokemonElement.getAttribute('data-health')) - damage;
   pokemonElement.setAttribute('data-health', health);
   pokemonElement.querySelector('.health').textContent = 'Health: ' + health;
 
   if (health <= 0) {
-      pokemonElement.remove();  
+      pokemonElement.remove(); 
   }
 }
 
