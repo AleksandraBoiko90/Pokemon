@@ -85,51 +85,41 @@ function fetchPokemons(type = '') {
       );
       
       Promise.all(promises).then(results => {
-          const filteredResults = type ? results.filter(pokemon => pokemon.types[0].type.name === type) : results;
+          const filteredResults = type ? results.filter(pokemon => pokemon.types.some(t => t.type.name === type)) : results;
           
           filteredResults.forEach(pokemon => {
               pokemon.type = pokemon.types[0].type.name;
               pokemon.imageUrl = pokemon.sprites.front_default; 
           });
       
-          displayPokemon(filteredResults);
+          displayPokemon(filteredResults, type);
       });
       
   })
   .catch(error => console.error('Error:', error));
 }
 
+let allPokemons = [];
+
 function displayPokemon(pokemonList, filterType = '') {
   const pokemonContainer = document.querySelector('.pokemon-container');
   pokemonContainer.innerHTML = '';
 
-  
   let myPokemons = JSON.parse(localStorage.getItem('myPokemons')) || [];
   let customPokemons = JSON.parse(localStorage.getItem('customPokemons')) || [];
-
 
   myPokemons = myPokemons.filter(pokemon => !filterType || pokemon.type === filterType);
   customPokemons = customPokemons.filter(pokemon => !filterType || pokemon.type === filterType);
 
-
-  let allPokemons = myPokemons.concat(pokemonList, customPokemons);
+  allPokemons = myPokemons.concat(pokemonList, customPokemons);
 
   allPokemons.forEach((pokemon, index) => {
       const pokemonCard = createPokemonCard(pokemon, index);
       pokemonContainer.appendChild(pokemonCard);
   });
 
-  
-  document.querySelectorAll('.save-button').forEach(button => {
-      button.addEventListener('click', function() {
-          const index = this.getAttribute('data-index');
-          savePokemon(allPokemons[index]);
-      });
-  });
-
-  attachDeleteEventHandlers();
+  attachDeleteEventHandlers(); // Перепривязка обработчиков событий
 }
-
 function createPokemonCard(pokemon, index) {
   const pokemonCard = document.createElement('div');
   pokemonCard.classList.add('pokemon-card');
@@ -153,8 +143,15 @@ function attachDeleteEventHandlers() {
   document.querySelectorAll('.delete-button').forEach((button, index) => {
       button.addEventListener('click', function () {
           const pokemonIndex = parseInt(this.parentElement.querySelector('.save-button').getAttribute('data-index'));
-          deletePokemonFromList(pokemonIndex); 
+          deletePokemonFromList(pokemonIndex);
           this.parentElement.remove();
+      });
+  });
+
+  document.querySelectorAll('.save-button').forEach(button => {
+      button.addEventListener('click', function() {
+          const index = parseInt(this.getAttribute('data-index'));
+          savePokemon(allPokemons[index]);
       });
   });
 }
@@ -177,8 +174,7 @@ function displaySavedPokemons(filterType = '') {
       savedPokemonsContainer.appendChild(pokemonCard);
   });
 
-
-  attachDeleteEventHandlersForSavedPokemons();
+  attachDeleteEventHandlersForSavedPokemons(); // Перепривязка обработчиков для сохраненных покемонов
 }
 
 
@@ -218,4 +214,5 @@ function savePokemon(pokemon) {
   localStorage.setItem('customPokemons', JSON.stringify(savedPokemons));
   displaySavedPokemons();
 }
+
 
