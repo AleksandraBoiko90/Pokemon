@@ -85,11 +85,14 @@ function fetchPokemons(type = '') {
       );
       
       Promise.all(promises).then(results => {
-          const filteredResults = type ? results.filter(pokemon => pokemon.types.some(t => t.type.name === type)) : results;
+
+          const filteredResults = results.filter(pokemon => {
+              return !type || (pokemon.types[0].type.name === type);
+          });
           
           filteredResults.forEach(pokemon => {
-              pokemon.type = pokemon.types[0].type.name;
-              pokemon.imageUrl = pokemon.sprites.front_default; 
+              pokemon.type = pokemon.types[0].type.name;  
+              pokemon.imageUrl = pokemon.sprites.front_default;
           });
       
           displayPokemon(filteredResults, type);
@@ -99,27 +102,26 @@ function fetchPokemons(type = '') {
   .catch(error => console.error('Error:', error));
 }
 
-let allPokemons = [];
 
 function displayPokemon(pokemonList, filterType = '') {
   const pokemonContainer = document.querySelector('.pokemon-container');
   pokemonContainer.innerHTML = '';
 
-  let myPokemons = JSON.parse(localStorage.getItem('myPokemons')) || [];
-  let customPokemons = JSON.parse(localStorage.getItem('customPokemons')) || [];
-
-  myPokemons = myPokemons.filter(pokemon => !filterType || pokemon.type === filterType);
-  customPokemons = customPokemons.filter(pokemon => !filterType || pokemon.type === filterType);
-
-  allPokemons = myPokemons.concat(pokemonList, customPokemons);
+  let allPokemons = [].concat(
+      JSON.parse(localStorage.getItem('myPokemons')) || [],
+      JSON.parse(localStorage.getItem('customPokemons')) || [],
+      pokemonList
+  ).filter(pokemon => !filterType || pokemon.type === filterType);
 
   allPokemons.forEach((pokemon, index) => {
       const pokemonCard = createPokemonCard(pokemon, index);
       pokemonContainer.appendChild(pokemonCard);
   });
 
-  attachDeleteEventHandlers(); // Перепривязка обработчиков событий
+  attachDeleteEventHandlers(allPokemons);  
 }
+
+
 function createPokemonCard(pokemon, index) {
   const pokemonCard = document.createElement('div');
   pokemonCard.classList.add('pokemon-card');
@@ -139,7 +141,9 @@ function createPokemonCard(pokemon, index) {
 
   return pokemonCard;
 }
-function attachDeleteEventHandlers() {
+
+
+function attachDeleteEventHandlers(allPokemons) {
   document.querySelectorAll('.delete-button').forEach((button, index) => {
       button.addEventListener('click', function () {
           const pokemonIndex = parseInt(this.parentElement.querySelector('.save-button').getAttribute('data-index'));
@@ -174,7 +178,7 @@ function displaySavedPokemons(filterType = '') {
       savedPokemonsContainer.appendChild(pokemonCard);
   });
 
-  attachDeleteEventHandlersForSavedPokemons(); // Перепривязка обработчиков для сохраненных покемонов
+  attachDeleteEventHandlersForSavedPokemons(); 
 }
 
 
@@ -197,8 +201,10 @@ function deleteSavedPokemon(index, filterType = '') {
 
 function savePokemon(pokemon) {
   let savedPokemons = JSON.parse(localStorage.getItem('customPokemons')) || [];
+  console.log("Pokemon saved prior to addition:", savedPokemons);
 
   const pokemonExists = savedPokemons.some(savedPokemon => savedPokemon.name === pokemon.name && savedPokemon.type === pokemon.type);
+  console.log("Pokemon already exist:", pokemonExists);
 
   if (pokemonExists) {
       alert('This pokemon is already in your saved list.');
@@ -211,6 +217,7 @@ function savePokemon(pokemon) {
   }
 
   savedPokemons.push(pokemon);
+  console.log("New Pokemon added:", pokemon);
   localStorage.setItem('customPokemons', JSON.stringify(savedPokemons));
   displaySavedPokemons();
 }
