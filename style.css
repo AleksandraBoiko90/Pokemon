@@ -1,3 +1,115 @@
 .hidden {
     display: none;
 }
+
+#battle-area, #select-pokemon-list {
+    display: flex;
+    justify-content: space-around;
+    padding: 10px;
+}
+.hidden {
+    display: none;
+}
+
+/* General body and font styling */
+body {
+    font-family: Arial, sans-serif;
+    background-color: #f4f4f4;
+    margin: 0;
+    padding: 20px;
+    color: #333;
+}
+
+/* Form styling */
+form {
+    background: #fff;
+    padding: 20px;
+    border-radius: 8px;
+    box-shadow: 0 0 10px rgba(0, 0, 0, 0.1);
+}
+
+.container {
+    background: #fff;
+    padding: 20px;
+    margin-top: 20px;
+    border-radius: 8px;
+    box-shadow: 0 0 10px rgba(0, 0, 0, 0.1);
+}
+
+#saved-pokemons-container {
+    background-color: #e8f0fe; 
+    border: 1px solid blue;
+}
+
+input[type="text"], select, input[type="file"] {
+    width: 100%;
+    padding: 10px;
+    margin-top: 8px;
+    margin-bottom: 16px;
+    border: 1px solid #ddd;
+    border-radius: 4px;
+    box-sizing: border-box; 
+}
+
+button {
+    background-color: #5c67f2;
+    color: white;
+    border: none;
+    padding: 10px 20px;
+    text-align: center;
+    text-decoration: none;
+    display: inline-block;
+    font-size: 16px;
+    margin: 4px 2px;
+    cursor: pointer;
+    border-radius: 4px;
+    transition: background-color 0.3s;
+}
+
+button:hover {
+    background-color: #5058e5;
+}
+
+/* Container styling */
+#type-filters, .pokemon-container, #saved-pokemons-container, #battle-setup, #battle-area {
+    background: #fff;
+    margin-top: 20px;
+    padding: 20px;
+    border-radius: 8px;
+    box-shadow: 0 0 10px rgba(0, 0, 0, 0.1);
+}
+
+.pokemon-card {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: space-around;
+    border: 1px solid #ddd;
+    padding: 10px;
+    border-radius: 4px;
+    background: #fafafa;
+    transition: transform 0.2s;
+}
+
+.pokemon-card:hover {
+    transform: scale(1.05); 
+}
+
+
+.pokemon-container, .saved-pokemons {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(150px, 1fr)); 
+    gap: 10px;
+}
+
+
+.pokemon-card img {
+    width: 100px;
+    height: 100px;
+}
+
+#toggle-saved-pokemons{
+    margin-top: 20px;
+    margin-left: 20px;
+
+}

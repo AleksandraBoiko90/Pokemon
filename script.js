@@ -49,18 +49,18 @@ function getCurrentFilterType() {
 
 function getTypeColor(type) {
   const typeColors = {
-      fire: '#FDDFDF',
+      fire: '#ffa56d',
       water: '#DEF3FD',
       grass: '#DEFDE0',
       electric: '#FCF7DE',
       ground: '#f4e7da',
       rock: '#d5d5d4',
       fairy: '#fceaff',
-      poison: '#9999',
+      poison: '#cf9cd6',
       bug: '#f8d5a3',
-      dragon: '#97b3e6',
+      dragon: '#ffcaa5',
       psychic: '#eaeda1',
-      flying: '#F5F5F5',
+      flying: '##ffe1a5',
       fighting: '#E6E0D4',
       normal: '#F5F5F5'
   };
@@ -85,7 +85,7 @@ function fetchPokemons(type = '') {
           );
 
           Promise.all(promises).then(results => {
-              console.log("Полученные данные о покемонах:", results); // Добавим вывод данных о покемонах
+              console.log("The received data of pokemons:", results); // Добавим вывод данных о покемонах
               const filteredResults = results.filter(pokemon => {
                   return !type || (pokemon.types[0].type.name === type);
               }).map(pokemon => {
@@ -98,7 +98,7 @@ function fetchPokemons(type = '') {
                   };
               });
 
-              console.log("Отфильтрованные данные о покемонах:", filteredResults); // Добавим вывод отфильтрованных данных
+              console.log("The filtered data of pokemons:", filteredResults); // Добавим вывод отфильтрованных данных
               displayPokemon(filteredResults, type);
           });
       })
@@ -142,6 +142,8 @@ function createPokemonCard(pokemon, index) {
       <img src="${imageUrl}" alt="${pokemon.name}" style="width:100px;height:100px;">
       <h3>${pokemon.name}</h3>
       <p>Type: ${type}</p>
+      <p>Health: <span class="health">${pokemon.hp}</span></p>
+          <p>Attack: <span class="attack">${pokemon.attack}</span></p>
       <button class="save-button" data-index="${index}">Save</button>
       <button class="delete-button" data-index="${index}">Delete</button>
       <button class="edit-button" data-index="${index}">Edit</button>
@@ -209,10 +211,10 @@ function deleteSavedPokemon(index, filterType = '') {
 
 function savePokemon(pokemon) {
   let savedPokemons = JSON.parse(localStorage.getItem('customPokemons')) || [];
-  console.log("Сохраняемые покемоны до добавления:", savedPokemons);
+  console.log("Saved pokemons before adding:", savedPokemons);
 
   const pokemonExists = savedPokemons.some(savedPokemon => savedPokemon.name === pokemon.name && savedPokemon.type === pokemon.type);
-  console.log("Покемон уже существует:", pokemonExists);
+  console.log("Pokemon already exists:", pokemonExists);
 
   if (pokemonExists) {
       alert('This pokemon is already in your saved list.');
@@ -225,7 +227,7 @@ function savePokemon(pokemon) {
   }
 
   savedPokemons.push(pokemon);
-  console.log("Добавлен новый покемон:", pokemon);
+  console.log("New Pokemon added:", pokemon);
   localStorage.setItem('customPokemons', JSON.stringify(savedPokemons));
   displaySavedPokemons();
 }
@@ -246,7 +248,7 @@ function prepareBattle() {
       const [myTeamPokemons, opponentPokemons] = values;
       startBattle(myTeamPokemons, opponentPokemons);
   }).catch(error => {
-      console.error('Ошибка при подготовке к битве:', error);
+      console.error('Error preparing for battle:', error);
   });
 }
 
@@ -255,7 +257,7 @@ function getSavedPokemons() {
   return new Promise(resolve => {
       const savedPokemons = JSON.parse(localStorage.getItem('customPokemons') || '[]');
       if (savedPokemons.length < 3) {
-          alert("Недостаточно покемонов для битвы. Сохраните минимум 3 покемона.");
+          alert("Not enough Pokémon for battle. Save at least 3 Pokemon.");
           resolve([]);
       } else {
           resolve(savedPokemons.slice(0, 3));
@@ -311,25 +313,32 @@ function displayPokemons(pokemons, containerId) {
 
 
 document.getElementById('attack').addEventListener('click', performAttack);
+
+
 function performAttack() {
   let myTeam = Array.from(document.querySelectorAll('#my-team div'));
   let opponentTeam = Array.from(document.querySelectorAll('#opponent-team div'));
 
   if (opponentTeam.length > 0 && myTeam.length > 0) {
-      
-      let attackElement = myTeam[0].querySelector('.attack');
+
+      let randomMyIndex = Math.floor(Math.random() * myTeam.length);
+      let myPokemon = myTeam[randomMyIndex];
+
+      let attackElement = myPokemon.querySelector('.attack');
       if (!attackElement) {
           console.error('Attack element not found');
-          return; 
+          return;
       }
       let attackValue = parseInt(attackElement.textContent);
 
-      
-      let opponentPokemon = opponentTeam[0];
+
+      let randomOpponentIndex = Math.floor(Math.random() * opponentTeam.length);
+      let opponentPokemon = opponentTeam[randomOpponentIndex];
+
       let opponentHealthElement = opponentPokemon.querySelector('.health');
       if (!opponentHealthElement) {
           console.error('Health element not found');
-          return; 
+          return;
       }
       let opponentHealth = parseInt(opponentHealthElement.textContent);
 
@@ -337,23 +346,67 @@ function performAttack() {
 
       if (opponentHealth > 0) {
           opponentHealthElement.textContent = opponentHealth;
-          console.log('Opponent has ' + opponentHealth + ' health left.');
+          alert(`Your ${myPokemon.querySelector('h3').textContent} attacked ${opponentPokemon.querySelector('h3').textContent} and dealt ${attackValue} damage!`);
+
+          setTimeout(() => {
+              performOpponentAttack(opponentTeam[Math.floor(Math.random() * opponentTeam.length)], myTeam);
+          }, 500);
       } else {
           opponentPokemon.remove();
-          console.log('Opponent Pokémon defeated!');
+          alert(`Your ${myPokemon.querySelector('h3').textContent} defeated ${opponentPokemon.querySelector('h3').textContent}!`);
+          checkBattleEnd();
       }
-
-      if (document.querySelectorAll('#opponent-team div').length === 0) {
-          alert('You won the battle!');
-          document.getElementById('battle-area').classList.add('hidden');
-          document.getElementById('battle-setup').classList.remove('hidden');
-      }
-  } else {
-      console.log('No pokemons available for the attack.');
   }
 }
 
 
+
+function performOpponentAttack(opponentPokemon, myTeam) {
+  let attackElement = opponentPokemon.querySelector('.attack');
+  if (!attackElement) {
+      console.error('Opponent attack element not found');
+      return;
+  }
+  let attackValue = parseInt(attackElement.textContent);
+
+  if (myTeam.length === 0) {
+      console.error("No available Pokémon for opponent to attack.");
+      return;
+  }
+
+
+  let randomIndex = Math.floor(Math.random() * myTeam.length);
+  let myPokemon = myTeam[randomIndex];
+  let myHealthElement = myPokemon.querySelector('.health');
+  if (!myHealthElement) {
+      console.error('My Pokémon health element not found');
+      return;
+  }
+  let myHealth = parseInt(myHealthElement.textContent);
+
+  myHealth -= attackValue;
+
+  if (myHealth > 0) {
+      myHealthElement.textContent = myHealth;
+      alert(`Opponent's ${opponentPokemon.querySelector('h3').textContent} attacked your ${myPokemon.querySelector('h3').textContent} and dealt ${attackValue} damage!`);
+  } else {
+      myPokemon.remove();
+      alert(`Opponent's ${opponentPokemon.querySelector('h3').textContent} defeated your ${myPokemon.querySelector('h3').textContent}!`);
+      checkBattleEnd();
+  }
+}
+
+function checkBattleEnd() {
+  if (document.querySelectorAll('#my-team div').length === 0) {
+      alert('You lost the battle!');
+      document.getElementById('battle-area').classList.add('hidden');
+      document.getElementById('battle-setup').classList.remove('hidden');
+  } else if (document.querySelectorAll('#opponent-team div').length === 0) {
+      alert('You won the battle!');
+      document.getElementById('battle-area').classList.add('hidden');
+      document.getElementById('battle-setup').classList.remove('hidden');
+  }
+}
 
 
 
