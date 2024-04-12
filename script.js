@@ -222,6 +222,13 @@ function savePokemon(pokemon) {
   displaySavedPokemons();
 }
 
+
+
+
+
+
+
+
 document.getElementById('prepare-battle').addEventListener('click', prepareBattle);
 
 function prepareBattle() {
@@ -256,7 +263,7 @@ function getRandomOpponentPokemons() {
 }
 
 function startBattle(myTeam, opponentTeam) {
-  
+
   document.getElementById('battle-setup').classList.add('hidden');
   document.getElementById('battle-area').classList.remove('hidden');
   displayPokemons(myTeam, 'my-team');
@@ -271,5 +278,41 @@ function displayPokemons(pokemons, containerId) {
       pokemonElement.innerHTML = `<h3>${pokemon.name}</h3><img src="${pokemon.sprites.front_default}" alt="${pokemon.name}" style="width:100px;height:100px;">`;
       container.appendChild(pokemonElement);
   });
+}
+
+
+document.getElementById('attack').addEventListener('click', performAttack);
+
+function performAttack() {
+
+  console.log('Attack performed!');
+
+
+  let opponentPokemons = document.querySelectorAll('#opponent-team div');
+  let myPokemons = document.querySelectorAll('#my-team div');
+
+
+  if (opponentPokemons.length > 0) {
+      opponentPokemons[0].remove(); 
+      console.log('Opponent Pokémon defeated!');
+
+
+      if (document.querySelectorAll('#opponent-team div').length === 0) {
+          alert('You won the battle!');
+          document.getElementById('battle-area').classList.add('hidden');  
+          document.getElementById('battle-setup').classList.remove('hidden');  
+      }
+  }
+}
+
+function updateHealth(pokemonElement, damage) {
+
+  let health = parseInt(pokemonElement.getAttribute('data-health')) - damage;
+  pokemonElement.setAttribute('data-health', health);
+  pokemonElement.querySelector('.health').textContent = 'Health: ' + health;
+
+  if (health <= 0) {
+      pokemonElement.remove();  
+  }
 }
 
